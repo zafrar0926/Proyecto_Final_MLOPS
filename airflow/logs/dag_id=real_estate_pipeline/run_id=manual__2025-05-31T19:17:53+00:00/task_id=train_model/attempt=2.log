@@ -1,0 +1,98 @@
+[2025-05-31T19:23:31.516+0000] {taskinstance.py:1956} INFO - Dependencies all met for dep_context=non-requeueable deps ti=<TaskInstance: real_estate_pipeline.train_model manual__2025-05-31T19:17:53+00:00 [queued]>
+[2025-05-31T19:23:31.546+0000] {taskinstance.py:1956} INFO - Dependencies all met for dep_context=requeueable deps ti=<TaskInstance: real_estate_pipeline.train_model manual__2025-05-31T19:17:53+00:00 [queued]>
+[2025-05-31T19:23:31.547+0000] {taskinstance.py:2170} INFO - Starting attempt 2 of 2
+[2025-05-31T19:23:31.575+0000] {taskinstance.py:2191} INFO - Executing <Task(PythonOperator): train_model> on 2025-05-31 19:17:53+00:00
+[2025-05-31T19:23:31.602+0000] {standard_task_runner.py:60} INFO - Started process 378 to run task
+[2025-05-31T19:23:31.616+0000] {standard_task_runner.py:87} INFO - Running: ['***', 'tasks', 'run', 'real_estate_pipeline', 'train_model', 'manual__2025-05-31T19:17:53+00:00', '--job-id', '16', '--raw', '--subdir', 'DAGS_FOLDER/real_estate_pipeline.py', '--cfg-path', '/tmp/tmpvpjengb2']
+[2025-05-31T19:23:31.623+0000] {standard_task_runner.py:88} INFO - Job 16: Subtask train_model
+[2025-05-31T19:23:31.701+0000] {logging_mixin.py:188} WARNING - /home/***/.local/lib/python3.8/site-packages/***/settings.py:194 DeprecationWarning: The sql_alchemy_conn option in [core] has been moved to the sql_alchemy_conn option in [database] - the old setting has been used, but please update your config.
+[2025-05-31T19:23:31.978+0000] {task_command.py:423} INFO - Running <TaskInstance: real_estate_pipeline.train_model manual__2025-05-31T19:17:53+00:00 [running]> on host 279fe042b4ac
+[2025-05-31T19:23:32.807+0000] {taskinstance.py:2480} INFO - Exporting env vars: AIRFLOW_CTX_DAG_OWNER='***' AIRFLOW_CTX_DAG_ID='real_estate_pipeline' AIRFLOW_CTX_TASK_ID='train_model' AIRFLOW_CTX_EXECUTION_DATE='2025-05-31T19:17:53+00:00' AIRFLOW_CTX_TRY_NUMBER='2' AIRFLOW_CTX_DAG_RUN_ID='manual__2025-05-31T19:17:53+00:00'
+[2025-05-31T19:23:32.811+0000] {train.py:46} INFO - Iniciando entrenamiento del modelo...
+[2025-05-31T19:23:33.647+0000] {logging_mixin.py:188} WARNING - 2025/05/31 19:23:33 WARNING mlflow.utils.git_utils: Failed to import Git (the Git executable is probably not on your PATH), so Git SHA is not available. Error: Failed to initialize: Bad git executable.
+The git executable must be specified in one of the following ways:
+    - be included in your $PATH
+    - be set via $GIT_PYTHON_GIT_EXECUTABLE
+    - explicitly set via git.refresh(<full-path-to-git-executable>)
+
+All git commands will error until this is rectified.
+
+This initial message can be silenced or aggravated in the future by setting the
+$GIT_PYTHON_REFRESH environment variable. Use one of the following values:
+    - quiet|q|silence|s|silent|none|n|0: for no message or exception
+    - warn|w|warning|log|l|1: for a warning message (logging level CRITICAL, displayed by default)
+    - error|e|exception|raise|r|2: for a raised exception
+
+Example:
+    export GIT_PYTHON_REFRESH=quiet
+[2025-05-31T19:23:41.195+0000] {logging_mixin.py:188} WARNING - /home/***/.local/lib/python3.8/site-packages/_distutils_hack/__init__.py:33 UserWarning: Setuptools is replacing distutils.
+[2025-05-31T19:23:43.684+0000] {real_estate_pipeline.py:98} ERROR - Error en el entrenamiento del modelo: Unable to locate credentials
+[2025-05-31T19:23:43.685+0000] {taskinstance.py:2698} ERROR - Task failed with exception
+Traceback (most recent call last):
+  File "/home/airflow/.local/lib/python3.8/site-packages/airflow/models/taskinstance.py", line 433, in _execute_task
+    result = execute_callable(context=context, **execute_callable_kwargs)
+  File "/home/airflow/.local/lib/python3.8/site-packages/airflow/operators/python.py", line 199, in execute
+    return_value = self.execute_callable()
+  File "/home/airflow/.local/lib/python3.8/site-packages/airflow/operators/python.py", line 216, in execute_callable
+    return self.python_callable(*self.op_args, **self.op_kwargs)
+  File "/opt/airflow/dags/real_estate_pipeline.py", line 90, in train_new_model
+    model, scaler, test_r2 = train_model("postgresql://cleandata:cleandata123@clean_data_db:5432/clean_data")
+  File "/opt/airflow/dags/train.py", line 85, in main
+    mlflow.sklearn.log_model(model, "model")
+  File "/home/airflow/.local/lib/python3.8/site-packages/mlflow/sklearn/__init__.py", line 411, in log_model
+    return Model.log(
+  File "/home/airflow/.local/lib/python3.8/site-packages/mlflow/models/model.py", line 623, in log
+    mlflow.tracking.fluent.log_artifacts(local_path, mlflow_model.artifact_path, run_id)
+  File "/home/airflow/.local/lib/python3.8/site-packages/mlflow/tracking/fluent.py", line 1046, in log_artifacts
+    MlflowClient().log_artifacts(run_id, local_dir, artifact_path)
+  File "/home/airflow/.local/lib/python3.8/site-packages/mlflow/tracking/client.py", line 1195, in log_artifacts
+    self._tracking_client.log_artifacts(run_id, local_dir, artifact_path)
+  File "/home/airflow/.local/lib/python3.8/site-packages/mlflow/tracking/_tracking_service/client.py", line 538, in log_artifacts
+    self._get_artifact_repo(run_id).log_artifacts(local_dir, artifact_path)
+  File "/home/airflow/.local/lib/python3.8/site-packages/mlflow/store/artifact/s3_artifact_repo.py", line 194, in log_artifacts
+    self._upload_file(
+  File "/home/airflow/.local/lib/python3.8/site-packages/mlflow/store/artifact/s3_artifact_repo.py", line 165, in _upload_file
+    s3_client.upload_file(Filename=local_file, Bucket=bucket, Key=key, ExtraArgs=extra_args)
+  File "/home/airflow/.local/lib/python3.8/site-packages/boto3/s3/inject.py", line 145, in upload_file
+    return transfer.upload_file(
+  File "/home/airflow/.local/lib/python3.8/site-packages/boto3/s3/transfer.py", line 371, in upload_file
+    future.result()
+  File "/home/airflow/.local/lib/python3.8/site-packages/s3transfer/futures.py", line 103, in result
+    return self._coordinator.result()
+  File "/home/airflow/.local/lib/python3.8/site-packages/s3transfer/futures.py", line 266, in result
+    raise self._exception
+  File "/home/airflow/.local/lib/python3.8/site-packages/s3transfer/tasks.py", line 139, in __call__
+    return self._execute_main(kwargs)
+  File "/home/airflow/.local/lib/python3.8/site-packages/s3transfer/tasks.py", line 162, in _execute_main
+    return_value = self._main(**kwargs)
+  File "/home/airflow/.local/lib/python3.8/site-packages/s3transfer/upload.py", line 764, in _main
+    client.put_object(Bucket=bucket, Key=key, Body=body, **extra_args)
+  File "/home/airflow/.local/lib/python3.8/site-packages/botocore/client.py", line 553, in _api_call
+    return self._make_api_call(operation_name, kwargs)
+  File "/home/airflow/.local/lib/python3.8/site-packages/botocore/client.py", line 989, in _make_api_call
+    http, parsed_response = self._make_request(
+  File "/home/airflow/.local/lib/python3.8/site-packages/botocore/client.py", line 1015, in _make_request
+    return self._endpoint.make_request(operation_model, request_dict)
+  File "/home/airflow/.local/lib/python3.8/site-packages/botocore/endpoint.py", line 119, in make_request
+    return self._send_request(request_dict, operation_model)
+  File "/home/airflow/.local/lib/python3.8/site-packages/botocore/endpoint.py", line 198, in _send_request
+    request = self.create_request(request_dict, operation_model)
+  File "/home/airflow/.local/lib/python3.8/site-packages/botocore/endpoint.py", line 134, in create_request
+    self._event_emitter.emit(
+  File "/home/airflow/.local/lib/python3.8/site-packages/botocore/hooks.py", line 412, in emit
+    return self._emitter.emit(aliased_event_name, **kwargs)
+  File "/home/airflow/.local/lib/python3.8/site-packages/botocore/hooks.py", line 256, in emit
+    return self._emit(event_name, kwargs)
+  File "/home/airflow/.local/lib/python3.8/site-packages/botocore/hooks.py", line 239, in _emit
+    response = handler(**kwargs)
+  File "/home/airflow/.local/lib/python3.8/site-packages/botocore/signers.py", line 105, in handler
+    return self.sign(operation_name, request)
+  File "/home/airflow/.local/lib/python3.8/site-packages/botocore/signers.py", line 195, in sign
+    auth.add_auth(request)
+  File "/home/airflow/.local/lib/python3.8/site-packages/botocore/auth.py", line 418, in add_auth
+    raise NoCredentialsError()
+botocore.exceptions.NoCredentialsError: Unable to locate credentials
+[2025-05-31T19:23:43.741+0000] {taskinstance.py:1138} INFO - Marking task as FAILED. dag_id=real_estate_pipeline, task_id=train_model, execution_date=20250531T191753, start_date=20250531T192331, end_date=20250531T192343
+[2025-05-31T19:23:43.793+0000] {standard_task_runner.py:107} ERROR - Failed to execute job 16 for task train_model (Unable to locate credentials; 378)
+[2025-05-31T19:23:43.916+0000] {local_task_job_runner.py:234} INFO - Task exited with return code 1
+[2025-05-31T19:23:43.990+0000] {taskinstance.py:3280} INFO - 0 downstream tasks scheduled from follow-on schedule check

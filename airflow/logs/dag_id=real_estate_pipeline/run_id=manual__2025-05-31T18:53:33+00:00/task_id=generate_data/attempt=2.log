@@ -1,0 +1,92 @@
+[2025-05-31T18:58:42.301+0000] {taskinstance.py:1956} INFO - Dependencies all met for dep_context=non-requeueable deps ti=<TaskInstance: real_estate_pipeline.generate_data manual__2025-05-31T18:53:33+00:00 [queued]>
+[2025-05-31T18:58:42.329+0000] {taskinstance.py:1956} INFO - Dependencies all met for dep_context=requeueable deps ti=<TaskInstance: real_estate_pipeline.generate_data manual__2025-05-31T18:53:33+00:00 [queued]>
+[2025-05-31T18:58:42.329+0000] {taskinstance.py:2170} INFO - Starting attempt 2 of 2
+[2025-05-31T18:58:42.366+0000] {taskinstance.py:2191} INFO - Executing <Task(PythonOperator): generate_data> on 2025-05-31 18:53:33+00:00
+[2025-05-31T18:58:42.402+0000] {standard_task_runner.py:60} INFO - Started process 566 to run task
+[2025-05-31T18:58:42.420+0000] {standard_task_runner.py:87} INFO - Running: ['***', 'tasks', 'run', 'real_estate_pipeline', 'generate_data', 'manual__2025-05-31T18:53:33+00:00', '--job-id', '5', '--raw', '--subdir', 'DAGS_FOLDER/real_estate_pipeline.py', '--cfg-path', '/tmp/tmpvgtowyq1']
+[2025-05-31T18:58:42.429+0000] {standard_task_runner.py:88} INFO - Job 5: Subtask generate_data
+[2025-05-31T18:58:42.484+0000] {logging_mixin.py:188} WARNING - /home/***/.local/lib/python3.8/site-packages/***/settings.py:194 DeprecationWarning: The sql_alchemy_conn option in [core] has been moved to the sql_alchemy_conn option in [database] - the old setting has been used, but please update your config.
+[2025-05-31T18:58:42.579+0000] {task_command.py:423} INFO - Running <TaskInstance: real_estate_pipeline.generate_data manual__2025-05-31T18:53:33+00:00 [running]> on host 760cbdf3b59a
+[2025-05-31T18:58:42.799+0000] {taskinstance.py:2480} INFO - Exporting env vars: AIRFLOW_CTX_DAG_OWNER='***' AIRFLOW_CTX_DAG_ID='real_estate_pipeline' AIRFLOW_CTX_TASK_ID='generate_data' AIRFLOW_CTX_EXECUTION_DATE='2025-05-31T18:53:33+00:00' AIRFLOW_CTX_TRY_NUMBER='2' AIRFLOW_CTX_DAG_RUN_ID='manual__2025-05-31T18:53:33+00:00'
+[2025-05-31T18:58:42.962+0000] {real_estate_pipeline.py:55} ERROR - Error en la generación de datos: (psycopg2.errors.UndefinedColumn) column "bed" of relation "raw_properties" does not exist
+LINE 1: INSERT INTO raw_properties (bed, bath, acre_lot, house_size,...
+                                    ^
+
+[SQL: INSERT INTO raw_properties (bed, bath, acre_lot, house_size, price, total_rooms, created_at) VALUES (%(bed)s, %(bath)s, %(acre_lot)s, %(house_size)s, %(price)s, %(total_rooms)s, %(created_at)s)]
+[parameters: ({'bed': 4, 'bath': 2, 'acre_lot': 0.4054438024917856, 'house_size': 2779.4061030722914, 'price': 150558.4696126951, 'total_rooms': 7, 'created_at': datetime.datetime(2025, 5, 31, 18, 58, 42, 804725)}, {'bed': 5, 'bath': 1, 'acre_lot': 1.654137345826218, 'house_size': 4912.240739663649, 'price': 541986.1564448486, 'total_rooms': 11, 'created_at': datetime.datetime(2025, 5, 30, 18, 58, 42, 804737)}, {'bed': 3, 'bath': 2, 'acre_lot': 1.6810549381197097, 'house_size': 3463.3969808420948, 'price': 934399.5659725845, 'total_rooms': 10, 'created_at': datetime.datetime(2025, 5, 29, 18, 58, 42, 804740)}, {'bed': 5, 'bath': 2, 'acre_lot': 1.0641886941455887, 'house_size': 1330.3119145709115, 'price': 194853.89629702468, 'total_rooms': 9, 'created_at': datetime.datetime(2025, 5, 28, 18, 58, 42, 804741)}, {'bed': 5, 'bath': 3, 'acre_lot': 0.11213315626198381, 'house_size': 3639.945760716823, 'price': 787996.6552679539, 'total_rooms': 3, 'created_at': datetime.datetime(2025, 5, 27, 18, 58, 42, 804742)}, {'bed': 2, 'bath': 4, 'acre_lot': 0.6453724530323343, 'house_size': 2165.436864813136, 'price': 468703.9480383934, 'total_rooms': 6, 'created_at': datetime.datetime(2025, 5, 26, 18, 58, 42, 804744)}, {'bed': 3, 'bath': 4, 'acre_lot': 1.2721611449139103, 'house_size': 3682.574226081609, 'price': 689656.3430719043, 'total_rooms': 9, 'created_at': datetime.datetime(2025, 5, 25, 18, 58, 42, 804745)}, {'bed': 3, 'bath': 2, 'acre_lot': 1.9642537382521046, 'house_size': 1092.492822282104, 'price': 334212.9381867064, 'total_rooms': 9, 'created_at': datetime.datetime(2025, 5, 24, 18, 58, 42, 804747)}  ... displaying 10 of 1000 total bound parameter sets ...  {'bed': 1, 'bath': 2, 'acre_lot': 0.7695123985583433, 'house_size': 2064.393526904115, 'price': 593985.5213883398, 'total_rooms': 6, 'created_at': datetime.datetime(2022, 9, 6, 18, 58, 42, 810274)}, {'bed': 5, 'bath': 3, 'acre_lot': 1.698750350861044, 'house_size': 2911.051219046548, 'price': 441981.17106885515, 'total_rooms': 7, 'created_at': datetime.datetime(2022, 9, 5, 18, 58, 42, 810275)})]
+(Background on this error at: https://sqlalche.me/e/14/f405)
+[2025-05-31T18:58:42.965+0000] {taskinstance.py:2698} ERROR - Task failed with exception
+Traceback (most recent call last):
+  File "/home/airflow/.local/lib/python3.8/site-packages/sqlalchemy/engine/base.py", line 1890, in _execute_context
+    self.dialect.do_executemany(
+  File "/home/airflow/.local/lib/python3.8/site-packages/sqlalchemy/dialects/postgresql/psycopg2.py", line 982, in do_executemany
+    context._psycopg2_fetched_rows = xtras.execute_values(
+  File "/home/airflow/.local/lib/python3.8/site-packages/psycopg2/extras.py", line 1299, in execute_values
+    cur.execute(b''.join(parts))
+psycopg2.errors.UndefinedColumn: column "bed" of relation "raw_properties" does not exist
+LINE 1: INSERT INTO raw_properties (bed, bath, acre_lot, house_size,...
+                                    ^
+
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "/home/airflow/.local/lib/python3.8/site-packages/airflow/models/taskinstance.py", line 433, in _execute_task
+    result = execute_callable(context=context, **execute_callable_kwargs)
+  File "/home/airflow/.local/lib/python3.8/site-packages/airflow/operators/python.py", line 199, in execute
+    return_value = self.execute_callable()
+  File "/home/airflow/.local/lib/python3.8/site-packages/airflow/operators/python.py", line 216, in execute_callable
+    return self.python_callable(*self.op_args, **self.op_kwargs)
+  File "/opt/airflow/dags/real_estate_pipeline.py", line 44, in generate_and_save_data
+    collector.save_to_db(engine, 'raw_properties')
+  File "/opt/airflow/dags/data_collector.py", line 59, in save_to_db
+    self.data.to_sql(table_name, db_connection, if_exists='append', index=False)
+  File "/home/airflow/.local/lib/python3.8/site-packages/pandas/core/generic.py", line 2987, in to_sql
+    return sql.to_sql(
+  File "/home/airflow/.local/lib/python3.8/site-packages/pandas/io/sql.py", line 695, in to_sql
+    return pandas_sql.to_sql(
+  File "/home/airflow/.local/lib/python3.8/site-packages/pandas/io/sql.py", line 1738, in to_sql
+    total_inserted = sql_engine.insert_records(
+  File "/home/airflow/.local/lib/python3.8/site-packages/pandas/io/sql.py", line 1335, in insert_records
+    raise err
+  File "/home/airflow/.local/lib/python3.8/site-packages/pandas/io/sql.py", line 1325, in insert_records
+    return table.insert(chunksize=chunksize, method=method)
+  File "/home/airflow/.local/lib/python3.8/site-packages/pandas/io/sql.py", line 946, in insert
+    num_inserted = exec_insert(conn, keys, chunk_iter)
+  File "/home/airflow/.local/lib/python3.8/site-packages/pandas/io/sql.py", line 853, in _execute_insert
+    result = conn.execute(self.table.insert(), data)
+  File "/home/airflow/.local/lib/python3.8/site-packages/sqlalchemy/engine/base.py", line 1385, in execute
+    return meth(self, multiparams, params, _EMPTY_EXECUTION_OPTS)
+  File "/home/airflow/.local/lib/python3.8/site-packages/sqlalchemy/sql/elements.py", line 334, in _execute_on_connection
+    return connection._execute_clauseelement(
+  File "/home/airflow/.local/lib/python3.8/site-packages/sqlalchemy/engine/base.py", line 1577, in _execute_clauseelement
+    ret = self._execute_context(
+  File "/home/airflow/.local/lib/python3.8/site-packages/sqlalchemy/engine/base.py", line 1953, in _execute_context
+    self._handle_dbapi_exception(
+  File "/home/airflow/.local/lib/python3.8/site-packages/sqlalchemy/engine/base.py", line 2134, in _handle_dbapi_exception
+    util.raise_(
+  File "/home/airflow/.local/lib/python3.8/site-packages/sqlalchemy/util/compat.py", line 211, in raise_
+    raise exception
+  File "/home/airflow/.local/lib/python3.8/site-packages/sqlalchemy/engine/base.py", line 1890, in _execute_context
+    self.dialect.do_executemany(
+  File "/home/airflow/.local/lib/python3.8/site-packages/sqlalchemy/dialects/postgresql/psycopg2.py", line 982, in do_executemany
+    context._psycopg2_fetched_rows = xtras.execute_values(
+  File "/home/airflow/.local/lib/python3.8/site-packages/psycopg2/extras.py", line 1299, in execute_values
+    cur.execute(b''.join(parts))
+sqlalchemy.exc.ProgrammingError: (psycopg2.errors.UndefinedColumn) column "bed" of relation "raw_properties" does not exist
+LINE 1: INSERT INTO raw_properties (bed, bath, acre_lot, house_size,...
+                                    ^
+
+[SQL: INSERT INTO raw_properties (bed, bath, acre_lot, house_size, price, total_rooms, created_at) VALUES (%(bed)s, %(bath)s, %(acre_lot)s, %(house_size)s, %(price)s, %(total_rooms)s, %(created_at)s)]
+[parameters: ({'bed': 4, 'bath': 2, 'acre_lot': 0.4054438024917856, 'house_size': 2779.4061030722914, 'price': 150558.4696126951, 'total_rooms': 7, 'created_at': datetime.datetime(2025, 5, 31, 18, 58, 42, 804725)}, {'bed': 5, 'bath': 1, 'acre_lot': 1.654137345826218, 'house_size': 4912.240739663649, 'price': 541986.1564448486, 'total_rooms': 11, 'created_at': datetime.datetime(2025, 5, 30, 18, 58, 42, 804737)}, {'bed': 3, 'bath': 2, 'acre_lot': 1.6810549381197097, 'house_size': 3463.3969808420948, 'price': 934399.5659725845, 'total_rooms': 10, 'created_at': datetime.datetime(2025, 5, 29, 18, 58, 42, 804740)}, {'bed': 5, 'bath': 2, 'acre_lot': 1.0641886941455887, 'house_size': 1330.3119145709115, 'price': 194853.89629702468, 'total_rooms': 9, 'created_at': datetime.datetime(2025, 5, 28, 18, 58, 42, 804741)}, {'bed': 5, 'bath': 3, 'acre_lot': 0.11213315626198381, 'house_size': 3639.945760716823, 'price': 787996.6552679539, 'total_rooms': 3, 'created_at': datetime.datetime(2025, 5, 27, 18, 58, 42, 804742)}, {'bed': 2, 'bath': 4, 'acre_lot': 0.6453724530323343, 'house_size': 2165.436864813136, 'price': 468703.9480383934, 'total_rooms': 6, 'created_at': datetime.datetime(2025, 5, 26, 18, 58, 42, 804744)}, {'bed': 3, 'bath': 4, 'acre_lot': 1.2721611449139103, 'house_size': 3682.574226081609, 'price': 689656.3430719043, 'total_rooms': 9, 'created_at': datetime.datetime(2025, 5, 25, 18, 58, 42, 804745)}, {'bed': 3, 'bath': 2, 'acre_lot': 1.9642537382521046, 'house_size': 1092.492822282104, 'price': 334212.9381867064, 'total_rooms': 9, 'created_at': datetime.datetime(2025, 5, 24, 18, 58, 42, 804747)}  ... displaying 10 of 1000 total bound parameter sets ...  {'bed': 1, 'bath': 2, 'acre_lot': 0.7695123985583433, 'house_size': 2064.393526904115, 'price': 593985.5213883398, 'total_rooms': 6, 'created_at': datetime.datetime(2022, 9, 6, 18, 58, 42, 810274)}, {'bed': 5, 'bath': 3, 'acre_lot': 1.698750350861044, 'house_size': 2911.051219046548, 'price': 441981.17106885515, 'total_rooms': 7, 'created_at': datetime.datetime(2022, 9, 5, 18, 58, 42, 810275)})]
+(Background on this error at: https://sqlalche.me/e/14/f405)
+[2025-05-31T18:58:43.013+0000] {taskinstance.py:1138} INFO - Marking task as FAILED. dag_id=real_estate_pipeline, task_id=generate_data, execution_date=20250531T185333, start_date=20250531T185842, end_date=20250531T185843
+[2025-05-31T18:58:43.039+0000] {standard_task_runner.py:107} ERROR - Failed to execute job 5 for task generate_data ((psycopg2.errors.UndefinedColumn) column "bed" of relation "raw_properties" does not exist
+LINE 1: INSERT INTO raw_properties (bed, bath, acre_lot, house_size,...
+                                    ^
+
+[SQL: INSERT INTO raw_properties (bed, bath, acre_lot, house_size, price, total_rooms, created_at) VALUES (%(bed)s, %(bath)s, %(acre_lot)s, %(house_size)s, %(price)s, %(total_rooms)s, %(created_at)s)]
+[parameters: ({'bed': 4, 'bath': 2, 'acre_lot': 0.4054438024917856, 'house_size': 2779.4061030722914, 'price': 150558.4696126951, 'total_rooms': 7, 'created_at': datetime.datetime(2025, 5, 31, 18, 58, 42, 804725)}, {'bed': 5, 'bath': 1, 'acre_lot': 1.654137345826218, 'house_size': 4912.240739663649, 'price': 541986.1564448486, 'total_rooms': 11, 'created_at': datetime.datetime(2025, 5, 30, 18, 58, 42, 804737)}, {'bed': 3, 'bath': 2, 'acre_lot': 1.6810549381197097, 'house_size': 3463.3969808420948, 'price': 934399.5659725845, 'total_rooms': 10, 'created_at': datetime.datetime(2025, 5, 29, 18, 58, 42, 804740)}, {'bed': 5, 'bath': 2, 'acre_lot': 1.0641886941455887, 'house_size': 1330.3119145709115, 'price': 194853.89629702468, 'total_rooms': 9, 'created_at': datetime.datetime(2025, 5, 28, 18, 58, 42, 804741)}, {'bed': 5, 'bath': 3, 'acre_lot': 0.11213315626198381, 'house_size': 3639.945760716823, 'price': 787996.6552679539, 'total_rooms': 3, 'created_at': datetime.datetime(2025, 5, 27, 18, 58, 42, 804742)}, {'bed': 2, 'bath': 4, 'acre_lot': 0.6453724530323343, 'house_size': 2165.436864813136, 'price': 468703.9480383934, 'total_rooms': 6, 'created_at': datetime.datetime(2025, 5, 26, 18, 58, 42, 804744)}, {'bed': 3, 'bath': 4, 'acre_lot': 1.2721611449139103, 'house_size': 3682.574226081609, 'price': 689656.3430719043, 'total_rooms': 9, 'created_at': datetime.datetime(2025, 5, 25, 18, 58, 42, 804745)}, {'bed': 3, 'bath': 2, 'acre_lot': 1.9642537382521046, 'house_size': 1092.492822282104, 'price': 334212.9381867064, 'total_rooms': 9, 'created_at': datetime.datetime(2025, 5, 24, 18, 58, 42, 804747)}  ... displaying 10 of 1000 total bound parameter sets ...  {'bed': 1, 'bath': 2, 'acre_lot': 0.7695123985583433, 'house_size': 2064.393526904115, 'price': 593985.5213883398, 'total_rooms': 6, 'created_at': datetime.datetime(2022, 9, 6, 18, 58, 42, 810274)}, {'bed': 5, 'bath': 3, 'acre_lot': 1.698750350861044, 'house_size': 2911.051219046548, 'price': 441981.17106885515, 'total_rooms': 7, 'created_at': datetime.datetime(2022, 9, 5, 18, 58, 42, 810275)})]
+(Background on this error at: https://sqlalche.me/e/14/f405); 566)
+[2025-05-31T18:58:43.116+0000] {local_task_job_runner.py:234} INFO - Task exited with return code 1
+[2025-05-31T18:58:43.244+0000] {taskinstance.py:3280} INFO - 0 downstream tasks scheduled from follow-on schedule check

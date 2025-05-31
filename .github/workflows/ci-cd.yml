@@ -37,6 +37,14 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+      
+      - name: Debug directory structure
+        run: |
+          pwd
+          ls -la
+          ls -la mlflow/
       
       - name: Check Docker Hub Credentials
         run: |
@@ -67,6 +75,7 @@ jobs:
         uses: docker/build-push-action@v4
         with:
           context: ./mlflow
+          file: ./mlflow/Dockerfile
           push: true
           tags: ${{ env.REGISTRY }}/${{ env.MLFLOW_IMAGE }}:${{ github.sha }},${{ env.REGISTRY }}/${{ env.MLFLOW_IMAGE }}:latest
           
@@ -75,6 +84,7 @@ jobs:
         uses: docker/build-push-action@v4
         with:
           context: ./api
+          file: ./api/Dockerfile
           push: true
           tags: ${{ env.REGISTRY }}/${{ env.FASTAPI_IMAGE }}:${{ github.sha }},${{ env.REGISTRY }}/${{ env.FASTAPI_IMAGE }}:latest
           
@@ -83,6 +93,7 @@ jobs:
         uses: docker/build-push-action@v4
         with:
           context: ./streamlit
+          file: ./streamlit/Dockerfile
           push: true
           tags: ${{ env.REGISTRY }}/${{ env.STREAMLIT_IMAGE }}:${{ github.sha }},${{ env.REGISTRY }}/${{ env.STREAMLIT_IMAGE }}:latest 
-      # END
+      

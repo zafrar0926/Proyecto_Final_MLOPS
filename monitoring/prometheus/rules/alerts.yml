@@ -1,0 +1,42 @@
+groups:
+  - name: MLOpsAlerts
+    rules:
+      # Alta tasa de error en predicciones
+      - alert: HighPredictionErrorRate
+        expr: rate(model_prediction_errors_total[5m]) / rate(http_requests_total[5m]) > 0.1
+        for: 5m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Alta tasa de error en predicciones"
+          description: "La tasa de error en predicciones es superior al 10% en los últimos 5 minutos"
+
+      # Latencia alta en predicciones
+      - alert: HighPredictionLatency
+        expr: rate(model_prediction_latency_seconds_sum[5m]) / rate(model_prediction_latency_seconds_count[5m]) > 2
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Alta latencia en predicciones"
+          description: "El tiempo promedio de predicción es superior a 2 segundos"
+
+      # Tasa de solicitudes anormalmente alta
+      - alert: HighRequestRate
+        expr: rate(http_requests_total[5m]) > 100
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Tasa de solicitudes alta"
+          description: "Se están recibiendo más de 100 solicitudes por minuto"
+
+      # Servicio caído
+      - alert: ServiceDown
+        expr: up == 0
+        for: 1m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Servicio caído"
+          description: "{{ $labels.job }} está caído" 

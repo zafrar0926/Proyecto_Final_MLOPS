@@ -1,0 +1,208 @@
+version: '3.8'
+
+services:
+  # Base de datos para MLflow
+  mlflow_db:
+    image: postgres:15
+    environment:
+      - POSTGRES_USER=mlflow
+      - POSTGRES_PASSWORD=mlflow123
+      - POSTGRES_DB=mlflow
+    volumes:
+      - mlflow_db_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD", "pg_isready", "-U", "mlflow"]
+      interval: 5s
+      retries: 5
+
+  # Base de datos para datos crudos
+  raw_data_db:
+    image: postgres:15
+    environment:
+      - POSTGRES_USER=rawdata
+      - POSTGRES_PASSWORD=rawdata123
+      - POSTGRES_DB=raw_data
+    volumes:
+      - raw_data_db:/var/lib/postgresql/data
+      - ./scripts/init-raw-db.sql:/docker-entrypoint-initdb.d/init.sql
+    healthcheck:
+      test: ["CMD", "pg_isready", "-U", "rawdata"]
+      interval: 5s
+      retries: 5
+
+  # Base de datos para datos procesados
+  clean_data_db:
+    image: postgres:15
+    environment:
+      - POSTGRES_USER=cleandata
+      - POSTGRES_PASSWORD=cleandata123
+      - POSTGRES_DB=clean_data
+    volumes:
+      - clean_data_db:/var/lib/postgresql/data
+      - ./scripts/init-clean-db.sql:/docker-entrypoint-initdb.d/init.sql
+    healthcheck:
+      test: ["CMD", "pg_isready", "-U", "cleandata"]
+      interval: 5s
+      retries: 5
+
+  # MinIO para almacenamiento de artefactos
+  minio:
+    image: minio/minio
+    environment:
+      - MINIO_ROOT_USER=minioadmin
+      - MINIO_ROOT_PASSWORD=minioadmin
+    command: server /data --console-address ":9001"
+    ports:
+      - "9000:9000"
+      - "9001:9001"
+    volumes:
+      - minio_data:/data
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:9000/minio/health/live"]
+      interval: 30s
+      timeout: 20s
+      retries: 3
+
+  # Base de datos para Airflow
+  postgres:
+    image: postgres:15
+    environment:
+      - POSTGRES_USER=airflow
+      - POSTGRES_PASSWORD=airflow
+      - POSTGRES_DB=airflow
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD", "pg_isready", "-U", "airflow"]
+      interval: 5s
+      retries: 5
+
+  # Inicializador de MinIO
+  minio-init:
+    image: minio/mc
+    depends_on:
+      - minio
+    volumes:
+      - ./scripts/init-minio.sh:/usr/local/bin/init-minio.sh
+    entrypoint: ["/usr/local/bin/init-minio.sh"]
+
+  # MLflow server
+  mlflow:
+    build: ./mlflow
+    depends_on:
+      mlflow_db:
+        condition: service_healthy
+      minio:
+        condition: service_healthy
+    environment:
+      - MLFLOW_TRACKING_URI=postgresql://mlflow:mlflow123@mlflow_db:5432/mlflow
+      - MLFLOW_S3_ENDPOINT_URL=http://minio:9000
+      - AWS_ACCESS_KEY_ID=minioadmin
+      - AWS_SECRET_ACCESS_KEY=minioadmin
+    volumes:
+      - ./models:/app/models
+    ports:
+      - "5000:5000"
+
+  # Airflow
+  airflow-webserver:
+    build: ./airflow
+    depends_on:
+      - raw_data_db
+      - clean_data_db
+      - mlflow
+    environment:
+      - AIRFLOW__CORE__SQL_ALCHEMY_CONN=postgresql+psycopg2://airflow:airflow@postgres:5432/airflow
+      - AIRFLOW__CORE__EXECUTOR=LocalExecutor
+      - AIRFLOW__CORE__LOAD_EXAMPLES=False
+    volumes:
+      - ./airflow/dags:/opt/airflow/dags
+      - ./airflow/logs:/opt/airflow/logs
+      - ./airflow/plugins:/opt/airflow/plugins
+      - ./data:/opt/airflow/data
+      - ./models:/opt/airflow/models
+      - ./scripts/init-airflow.sh:/opt/airflow/init-airflow.sh
+    ports:
+      - "8080:8080"
+    command: bash -c "/opt/airflow/init-airflow.sh && airflow webserver"
+    healthcheck:
+      test: ["CMD-SHELL", "[ -f /opt/airflow/airflow-webserver.pid ]"]
+      interval: 30s
+      timeout: 30s
+      retries: 3
+
+  airflow-scheduler:
+    build: ./airflow
+    depends_on:
+      - airflow-webserver
+    environment:
+      - AIRFLOW__CORE__SQL_ALCHEMY_CONN=postgresql+psycopg2://airflow:airflow@postgres:5432/airflow
+      - AIRFLOW__CORE__EXECUTOR=LocalExecutor
+      - AIRFLOW__CORE__LOAD_EXAMPLES=False
+    volumes:
+      - ./airflow/dags:/opt/airflow/dags
+      - ./airflow/logs:/opt/airflow/logs
+      - ./airflow/plugins:/opt/airflow/plugins
+      - ./data:/opt/airflow/data
+      - ./models:/opt/airflow/models
+    command: airflow scheduler
+
+  # FastAPI
+  fastapi:
+    build: ./api
+    ports:
+      - "8000:8000"
+    environment:
+      - MLFLOW_TRACKING_URI=http://mlflow:5000
+    volumes:
+      - ./models:/app/models
+    depends_on:
+      - mlflow
+
+  # Streamlit
+  streamlit:
+    build: ./streamlit
+    ports:
+      - "8501:8501"
+    environment:
+      - FASTAPI_URL=http://fastapi:8000
+    volumes:
+      - ./models:/app/models
+    depends_on:
+      - fastapi
+
+  # Prometheus
+  prometheus:
+    build: ./monitoring/prometheus
+    ports:
+      - "9090:9090"
+    volumes:
+      - prometheus_data:/prometheus
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+      - '--web.console.libraries=/usr/share/prometheus/console_libraries'
+      - '--web.console.templates=/usr/share/prometheus/consoles'
+
+  # Grafana
+  grafana:
+    build: ./monitoring/grafana
+    ports:
+      - "3000:3000"
+    volumes:
+      - grafana_data:/var/lib/grafana
+    environment:
+      - GF_SECURITY_ADMIN_USER=admin
+      - GF_SECURITY_ADMIN_PASSWORD=admin
+      - GF_USERS_ALLOW_SIGN_UP=false
+    depends_on:
+      - prometheus
+
+volumes:
+  mlflow_db_data:
+  raw_data_db:
+  clean_data_db:
+  minio_data:
+  prometheus_data:
+  grafana_data:
+  postgres_data: 
