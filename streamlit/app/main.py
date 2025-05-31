@@ -3,20 +3,45 @@ import pandas as pd
 import numpy as np
 import requests
 import json
+import mlflow
+import shap
+from PIL import Image
 import plotly.express as px
 import plotly.graph_objects as go
-import mlflow
 from datetime import datetime
-import shap
 import os
 from .config import settings
 
 # Configuración de la página
 st.set_page_config(
-    page_title="Real Estate Price Predictor",
+    page_title="Real Estate Price Prediction",
     page_icon="🏠",
     layout="wide"
 )
+
+# Estilo CSS personalizado
+st.markdown("""
+    <style>
+    .main {
+        padding: 2rem;
+    }
+    .stButton>button {
+        width: 100%;
+        background-color: #4CAF50;
+        color: white;
+    }
+    .prediction-box {
+        padding: 2rem;
+        border-radius: 0.5rem;
+        background-color: #f8f9fa;
+        box-shadow: 0 0.25rem 0.5rem rgba(0,0,0,0.1);
+    }
+    </style>
+""", unsafe_allow_html=True)
+
+# Sidebar para navegación
+st.sidebar.title("Navigation")
+page = st.sidebar.radio("Go to", ["Make Prediction", "Model History", "Model Explainability"])
 
 # Configuración de MLflow
 os.environ['MLFLOW_S3_ENDPOINT_URL'] = settings.MINIO_ENDPOINT
@@ -27,21 +52,28 @@ mlflow.set_tracking_uri(settings.MLFLOW_TRACKING_URI)
 def get_model_history():
     """Get model history from MLflow"""
     client = mlflow.tracking.MlflowClient()
-    experiment = client.get_experiment_by_name(settings.MLFLOW_MODEL_NAME)
-    if experiment:
-        runs = client.search_runs(
-            experiment_ids=[experiment.experiment_id],
-            order_by=["metrics.r2 DESC"]
-        )
-        return runs
-    return []
+    experiments = client.search_experiments()
+    
+    models_info = []
+    for exp in experiments:
+        runs = client.search_runs(exp.experiment_id)
+        for run in runs:
+            models_info.append({
+                "run_id": run.info.run_id,
+                "experiment_name": exp.name,
+                "metrics": run.data.metrics,
+                "status": run.info.status,
+                "start_time": run.info.start_time,
+                "tags": run.data.tags
+            })
+    return models_info
 
-def make_prediction(features):
+def make_prediction(data):
     """Make prediction using FastAPI endpoint"""
     try:
         response = requests.post(
             f"{settings.API_URL}/predict",
-            json=features
+            json=data
         )
         return response.json()
     except requests.exceptions.RequestException as e:
@@ -109,106 +141,112 @@ def get_model_explanation(model, features):
     fig = shap.plots.waterfall(shap_values[0])
     return fig
 
-def main():
-    st.title("🏠 Real Estate Price Predictor")
-    st.markdown("""
-    Esta aplicación te ayuda a predecir el precio de una propiedad basándose en sus características.
-    Utiliza un modelo de Machine Learning entrenado con datos reales del mercado inmobiliario.
-    """)
-    
-    # Sidebar - Model Information
-    st.sidebar.title("Model Information")
-    runs = get_model_history()
-    if runs:
-        production_runs = [run for run in runs if run.data.tags.get("production") == "true"]
-        if production_runs:
-            current_model = production_runs[0]
-            st.sidebar.success(f"Current Production Model")
-            st.sidebar.metric("R² Score", f"{current_model.data.metrics.get('r2', 0):.4f}")
-            st.sidebar.metric("MSE", f"{current_model.data.metrics.get('mse', 0):.4f}")
-            
-            # Model parameters
-            st.sidebar.subheader("Model Parameters")
-            params = current_model.data.params
-            for param, value in params.items():
-                st.sidebar.text(f"{param}: {value}")
-    
-    # Main content - Prediction Interface
-    st.header("Make a Prediction")
+if page == "Make Prediction":
+    st.title("🏠 Real Estate Price Prediction")
     
     col1, col2 = st.columns(2)
     
     with col1:
-        bed = st.number_input("Number of Bedrooms", min_value=1, max_value=10, value=3)
-        bath = st.number_input("Number of Bathrooms", min_value=1, max_value=10, value=2)
+        st.subheader("Property Details")
+        beds = st.number_input("Number of Bedrooms", min_value=1, max_value=10, value=3)
+        baths = st.number_input("Number of Bathrooms", min_value=1, max_value=10, value=2)
+        house_size = st.number_input("House Size (sq ft)", min_value=500, max_value=10000, value=1500)
         acre_lot = st.number_input("Lot Size (acres)", min_value=0.1, max_value=10.0, value=0.5)
         
     with col2:
-        house_size = st.number_input("House Size (sq ft)", min_value=500, max_value=10000, value=2000)
-        total_rooms = st.number_input("Total Rooms", min_value=2, max_value=20, value=5)
-    
+        st.subheader("Location Details")
+        zip_code = st.text_input("ZIP Code", "12345")
+        city = st.text_input("City", "Sample City")
+        state = st.text_input("State", "CA")
+        
     if st.button("Predict Price"):
-        features = {
-            "bed": float(bed),
-            "bath": float(bath),
-            "acre_lot": float(acre_lot),
-            "house_size": float(house_size),
-            "total_rooms": float(total_rooms)
-        }
-        
-        result = make_prediction(features)
-        if result:
-            st.success(f"Predicted Price: ${result['predicted_price']:,.2f}")
-            st.info(f"Model Version: {result['model_version']}")
-            st.info(f"Model Stage: {result['model_stage']}")
+        with st.spinner("Calculating prediction..."):
+            prediction_data = {
+                "bed": beds,
+                "bath": baths,
+                "house_size": house_size,
+                "acre_lot": acre_lot,
+                "zip_code": zip_code,
+                "city": city,
+                "state": state
+            }
             
-            # Get and display SHAP explanation
-            st.subheader("Feature Importance (SHAP)")
-            feature_importance = get_shap_explanation(features)
-            if feature_importance is not None:
-                fig = px.bar(
-                    feature_importance,
-                    x='Importance',
-                    y='Feature',
-                    orientation='h',
-                    title='Feature Importance'
-                )
-                st.plotly_chart(fig)
+            try:
+                result = make_prediction(prediction_data)
+                st.success("Prediction Complete!")
+                
+                st.markdown("### Predicted Price")
+                st.markdown(f"""
+                <div class="prediction-box">
+                    <h1 style='text-align: center; color: #4CAF50;'>${result['prediction']:,.2f}</h1>
+                </div>
+                """, unsafe_allow_html=True)
+                
+            except Exception as e:
+                st.error(f"Error making prediction: {str(e)}")
+
+elif page == "Model History":
+    st.title("📈 Model History and Performance")
     
-    # Model History
-    st.header("Model History")
-    if runs:
-        history_data = []
-        for run in runs:
-            history_data.append({
-                "Run ID": run.info.run_id[:8],
-                "R² Score": run.data.metrics.get("r2", 0),
-                "MSE": run.data.metrics.get("mse", 0),
-                "Status": "Production" if run.data.tags.get("production") == "true" else "Archived",
-                "Timestamp": pd.to_datetime(run.info.start_time).strftime("%Y-%m-%d %H:%M:%S")
-            })
+    try:
+        models = get_model_history()
         
-        history_df = pd.DataFrame(history_data)
-        st.dataframe(history_df)
+        # Crear DataFrame con la información de los modelos
+        df_models = pd.DataFrame(models)
         
-        # Plot model performance history
-        fig = px.line(history_df, x="Timestamp", y="R² Score", title="Model Performance History")
-        st.plotly_chart(fig)
-    else:
-        st.warning("No model history available")
+        # Mostrar métricas a lo largo del tiempo
+        st.subheader("Model Performance Over Time")
+        fig = go.Figure()
+        
+        for metric in ['rmse', 'mae', 'r2']:
+            if metric in df_models.columns:
+                fig.add_trace(go.Scatter(
+                    x=df_models['start_time'],
+                    y=df_models[metric],
+                    name=metric.upper(),
+                    mode='lines+markers'
+                ))
+        
+        fig.update_layout(
+            title="Metrics Evolution",
+            xaxis_title="Time",
+            yaxis_title="Value",
+            hovermode='x unified'
+        )
+        st.plotly_chart(fig, use_container_width=True)
+        
+        # Tabla detallada de modelos
+        st.subheader("Detailed Model Information")
+        st.dataframe(df_models)
+        
+    except Exception as e:
+        st.error(f"Error fetching model history: {str(e)}")
 
-    # Información adicional
-    st.sidebar.header("Acerca de")
-    st.sidebar.markdown("""
-    Esta aplicación es parte de un proyecto MLOps que incluye:
-    - Pipeline de datos automatizado
-    - Entrenamiento continuo del modelo
-    - Monitoreo de rendimiento
-    - API REST para predicciones
-    """)
+elif page == "Model Explainability":
+    st.title("🔍 Model Explainability (SHAP)")
+    
+    st.info("This section shows the SHAP values for the current production model, helping understand how each feature impacts the predictions.")
+    
+    try:
+        # Aquí implementaremos la explicabilidad SHAP
+        # Por ahora es un placeholder
+        st.write("SHAP analysis will be implemented here")
+        
+    except Exception as e:
+        st.error(f"Error generating SHAP analysis: {str(e)}")
 
-    # Mostrar timestamp
-    st.sidebar.markdown(f"Última actualización: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
+# Información adicional
+st.sidebar.header("Acerca de")
+st.sidebar.markdown("""
+Esta aplicación es parte de un proyecto MLOps que incluye:
+- Pipeline de datos automatizado
+- Entrenamiento continuo del modelo
+- Monitoreo de rendimiento
+- API REST para predicciones
+""")
+
+# Mostrar timestamp
+st.sidebar.markdown(f"Última actualización: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
 
 if __name__ == "__main__":
     main() 

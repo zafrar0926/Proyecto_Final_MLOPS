@@ -2,20 +2,20 @@ FROM python:3.10-slim
 
 WORKDIR /app
 
-# Instalar dependencias del sistema
+# Install system dependencies
 RUN apt-get update && apt-get install -y \
     build-essential \
     && rm -rf /var/lib/apt/lists/*
 
-# Copiar requirements y código
+# Copy requirements and install Python dependencies
 COPY requirements.txt .
-COPY ./app ./app
-
-# Instalar dependencias de Python
 RUN pip install --no-cache-dir -r requirements.txt
 
-# Exponer puerto
+# Copy the Streamlit app
+COPY app/ .
+
+# Expose Streamlit port
 EXPOSE 8501
 
-# Comando para ejecutar Streamlit
-ENTRYPOINT ["streamlit", "run", "app/main.py", "--server.port=8501", "--server.address=0.0.0.0"] 
+# Command to run the Streamlit app
+CMD ["streamlit", "run", "main.py", "--server.address", "0.0.0.0"] 
