@@ -85,3 +85,4 @@ jobs:
           context: ./streamlit
           push: true
           tags: ${{ env.REGISTRY }}/${{ env.STREAMLIT_IMAGE }}:${{ github.sha }},${{ env.REGISTRY }}/${{ env.STREAMLIT_IMAGE }}:latest 
+      # END
