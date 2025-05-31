@@ -10,7 +10,7 @@ client = TestClient(app)
 def test_read_main():
     response = client.get("/")
     assert response.status_code == 200
-    assert "Real Estate Price Prediction API" in response.json()["message"]
+    assert response.json()["status"] == "ok"
 
 def test_predict():
     test_data = {
@@ -22,6 +22,7 @@ def test_predict():
     }
     response = client.post("/predict", json=test_data)
     assert response.status_code == 200
-    assert "predicted_price" in response.json()
-    assert "model_version" in response.json()
-    assert "model_stage" in response.json() 
+    data = response.json()
+    assert isinstance(data.get("predicted_price"), (int, float))
+    assert isinstance(data.get("model_version"), str)
+    assert isinstance(data.get("model_stage"), str) 
