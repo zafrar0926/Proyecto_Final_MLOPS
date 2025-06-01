@@ -1,120 +1,127 @@
-# Proyecto MLOps: Predicción de Precios Inmobiliarios
+# MLOps Real Estate Price Prediction Project
 
-Este proyecto implementa un sistema completo de MLOps para la predicción de precios de propiedades inmobiliarias, utilizando datos de Realtor.com. El sistema incluye recolección automática de datos, procesamiento, entrenamiento de modelos, y despliegue continuo.
+Este proyecto implementa un sistema MLOps completo para la predicción de precios de bienes raíces, utilizando datos de Realtor.com. El sistema incluye recolección automática de datos, procesamiento, entrenamiento continuo, y despliegue automatizado de modelos.
 
 ## Arquitectura del Sistema
 
-El proyecto está compuesto por los siguientes componentes principales:
+El proyecto está organizado en varios microservicios desplegados en Kubernetes:
 
-- **Airflow**: Orquestación de pipelines de datos y entrenamiento
-- **MLflow**: Registro y seguimiento de experimentos
-- **FastAPI**: API para servir predicciones
-- **Streamlit**: Interfaz de usuario para predicciones y visualización
-- **Prometheus & Grafana**: Monitoreo y observabilidad
-- **PostgreSQL**: Almacenamiento de datos y metadatos
-- **MinIO**: Almacenamiento de artefactos
+### Componentes Principales
+- **FastAPI**: API REST para servir predicciones en tiempo real
+- **MLflow**: Gestión y tracking de experimentos ML
+- **Airflow**: Orquestación de pipelines de datos
+- **Streamlit**: UI para predicciones e interpretabilidad
+- **PostgreSQL**: Almacenamiento de datos (Raw y Clean)
+- **MinIO**: Almacenamiento de artefactos ML
+- **Grafana & Prometheus**: Monitoreo y métricas
+
+### Bases de Datos
+- **Raw Data DB**: Almacena datos crudos de la API
+- **Clean Data DB**: Almacena datos procesados
+- **MLflow DB**: Metadatos de experimentos
+- **Airflow DB**: Metadatos de DAGs
+
+## Flujo de Trabajo
+
+1. **Recolección de Datos**:
+   - Airflow orquesta la recolección periódica desde la API externa
+   - Los datos se almacenan en Raw Data DB
+
+2. **Procesamiento**:
+   - Pipeline de limpieza y transformación
+   - Datos procesados almacenados en Clean Data DB
+
+3. **Entrenamiento**:
+   - Evaluación automática de necesidad de reentrenamiento
+   - Registro de experimentos en MLflow
+   - Selección automática del mejor modelo
+
+4. **Despliegue**:
+   - Modelos registrados en MLflow
+   - FastAPI sirve el modelo en producción
+   - Streamlit proporciona interfaz de usuario
+
+5. **Monitoreo**:
+   - Métricas de API recolectadas por Prometheus
+   - Visualización en dashboards de Grafana
+
+## Requisitos
+
+- Kubernetes (Minikube o similar)
+- kubectl
+- Python 3.8+
+- Docker
+
+## Despliegue
+
+1. Clonar el repositorio:
+```bash
+git clone https://github.com/zafrar0926/Proyecto_Final_MLOPS.git
+cd Proyecto_Final_MLOPS
+```
+
+2. Crear namespace:
+```bash
+kubectl create namespace mlops
+```
+
+3. Desplegar componentes:
+```bash
+kubectl apply -f kubernetes/base -n mlops
+kubectl apply -f kubernetes/airflow -n mlops
+kubectl apply -f kubernetes/api -n mlops
+```
+
+## Acceso a los Servicios
+
+Los servicios están disponibles en los siguientes puertos:
+
+- Streamlit: Puerto 8501
+- FastAPI: Puerto 8000
+- MLflow: Puerto 5000
+- Airflow: Puerto 8080
+- Grafana: Puerto 3000
 
 ## Estructura del Proyecto
 
 ```
 .
-├── airflow/
-│   ├── dags/
-│   │   └── real_estate_pipeline.py
-│   └── Dockerfile
-├── api/
-│   ├── app/
-│   │   └── main.py
-│   └── Dockerfile
-├── streamlit/
-│   ├── app/
-│   │   └── main.py
-│   └── Dockerfile
-├── mlflow/
-│   └── Dockerfile
-├── monitoring/
-│   ├── grafana/
-│   │   └── provisioning/
-│   └── prometheus/
-│       └── prometheus.yml
-├── docker-compose.yml
-└── requirements.txt
+├── airflow/               # DAGs y configuración
+├── api/                   # Código FastAPI
+├── kubernetes/            # Manifiestos K8s
+│   ├── airflow/          # Configuración Airflow
+│   ├── api/              # Configuración FastAPI
+│   ├── base/             # Configuraciones base
+│   └── monitoring/       # Grafana y Prometheus
+├── models/               # Código de modelos ML
+└── streamlit/            # Código Streamlit UI
 ```
 
-## Requisitos
+## Monitoreo y Métricas
 
-- Docker y Docker Compose
-- Python 3.9+
-- Acceso a la API de datos inmobiliarios
-
-## Configuración
-
-1. Clonar el repositorio:
-```bash
-git clone <repository-url>
-cd real-estate-mlops
-```
-
-2. Crear y configurar el archivo .env:
-```bash
-cp .env.example .env
-# Editar .env con las credenciales necesarias
-```
-
-3. Iniciar los servicios:
-```bash
-docker-compose up -d
-```
-
-## Acceso a los Servicios
-
-- Airflow UI: http://localhost:8080
-- MLflow UI: http://localhost:5000
-- FastAPI Docs: http://localhost:8000/docs
-- Streamlit UI: http://localhost:8501
-- Grafana: http://localhost:3000
-- Prometheus: http://localhost:9090
-
-## Pipeline de Datos
-
-1. **Recolección**: Datos obtenidos de la API de Realtor.com
-2. **Procesamiento**: Limpieza y transformación de datos
-3. **Entrenamiento**: Evaluación y entrenamiento automático de modelos
-4. **Despliegue**: Actualización automática del modelo en producción
-
-## Monitoreo y Observabilidad
-
-- Métricas de rendimiento del modelo
+El sistema incluye métricas clave:
 - Latencia de predicciones
-- Distribución de datos
-- Alertas configurables
+- Tasa de solicitudes
+- Precisión del modelo
+- Uso de recursos
 
-## Desarrollo
+## Interpretabilidad
+
+La interfaz de Streamlit incluye:
+- Visualizaciones SHAP para interpretabilidad
+- Historial de modelos
+- Comparación de versiones
+- Métricas de rendimiento
+
+## Contribuir
 
 Para contribuir al proyecto:
-
-1. Crear un nuevo branch:
-```bash
-git checkout -b feature/nueva-funcionalidad
-```
-
-2. Realizar cambios y commits:
-```bash
-git add .
-git commit -m "Descripción del cambio"
-```
-
-3. Crear pull request
-
-## CI/CD
-
-El proyecto utiliza GitHub Actions para:
-
-- Pruebas automáticas
-- Construcción de imágenes Docker
-- Publicación en DockerHub
-- Despliegue con Argo CD
+1. Fork el repositorio
+2. Crear rama feature (`git checkout -b feature/NuevaCaracteristica`)
+3. Commit cambios (`git commit -m 'Añadir nueva característica'`)
+4. Push a la rama (`git push origin feature/NuevaCaracteristica`)
+5. Crear Pull Request
 
 ## Licencia
 
-[MIT License](LICENSE) # Proyecto_Final_MLOPS
+Este proyecto está licenciado bajo la Licencia MIT - ver el archivo [LICENSE](LICENSE) para más detalles.
