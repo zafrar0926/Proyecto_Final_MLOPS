@@ -1,0 +1,49 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: airflow-scheduler
+  labels:
+    app: airflow-scheduler
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: airflow-scheduler
+  template:
+    metadata:
+      labels:
+        app: airflow-scheduler
+    spec:
+      containers:
+      - name: scheduler
+        image: zafrar09/airflow:latest
+        command: ["airflow", "scheduler"]
+        envFrom:
+        - configMapRef:
+            name: airflow-config
+        - secretRef:
+            name: postgresql-secrets
+        volumeMounts:
+        - name: dags
+          mountPath: /opt/airflow/dags
+        - name: logs
+          mountPath: /opt/airflow/logs
+        - name: plugins
+          mountPath: /opt/airflow/plugins
+        resources:
+          requests:
+            memory: "512Mi"
+            cpu: "500m"
+          limits:
+            memory: "1Gi"
+            cpu: "1000m"
+      volumes:
+      - name: dags
+        persistentVolumeClaim:
+          claimName: airflow-dags
+      - name: logs
+        persistentVolumeClaim:
+          claimName: airflow-logs
+      - name: plugins
+        persistentVolumeClaim:
+          claimName: airflow-plugins 

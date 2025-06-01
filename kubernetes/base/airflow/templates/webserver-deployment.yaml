@@ -1,0 +1,82 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: airflow-webserver
+  labels:
+    app: airflow-webserver
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: airflow-webserver
+  template:
+    metadata:
+      labels:
+        app: airflow-webserver
+    spec:
+      initContainers:
+      - name: init-airflow
+        image: zafrar09/airflow:latest
+        command: ['bash', '-c']
+        args:
+        - |
+          airflow db init &&
+          airflow users create \
+            --username admin \
+            --firstname admin \
+            --lastname admin \
+            --role Admin \
+            --email admin@example.com \
+            --password admin
+        envFrom:
+        - configMapRef:
+            name: airflow-config
+        - secretRef:
+            name: postgresql-secrets
+      containers:
+      - name: webserver
+        image: zafrar09/airflow:latest
+        ports:
+        - containerPort: 8080
+        command: ["airflow", "webserver"]
+        envFrom:
+        - configMapRef:
+            name: airflow-config
+        - secretRef:
+            name: postgresql-secrets
+        volumeMounts:
+        - name: dags
+          mountPath: /opt/airflow/dags
+        - name: logs
+          mountPath: /opt/airflow/logs
+        - name: plugins
+          mountPath: /opt/airflow/plugins
+        resources:
+          requests:
+            memory: "512Mi"
+            cpu: "500m"
+          limits:
+            memory: "1Gi"
+            cpu: "1000m"
+        livenessProbe:
+          httpGet:
+            path: /health
+            port: 8080
+          initialDelaySeconds: 60
+          periodSeconds: 10
+        readinessProbe:
+          httpGet:
+            path: /health
+            port: 8080
+          initialDelaySeconds: 30
+          periodSeconds: 10
+      volumes:
+      - name: dags
+        persistentVolumeClaim:
+          claimName: airflow-dags
+      - name: logs
+        persistentVolumeClaim:
+          claimName: airflow-logs
+      - name: plugins
+        persistentVolumeClaim:
+          claimName: airflow-plugins 

@@ -1,0 +1,21 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: postgresql-init-scripts
+data:
+  init-db.sh: |
+    #!/bin/bash
+    set -e
+
+    psql -v ON_ERROR_STOP=1 --username "$POSTGRES_USER" --dbname "$POSTGRES_DB" <<-EOSQL
+        CREATE DATABASE raw_data;
+        CREATE DATABASE clean_data;
+        CREATE DATABASE airflow;
+        GRANT ALL PRIVILEGES ON DATABASE raw_data TO mlflow;
+        GRANT ALL PRIVILEGES ON DATABASE clean_data TO mlflow;
+        GRANT ALL PRIVILEGES ON DATABASE airflow TO mlflow;
+        \c airflow
+        GRANT ALL PRIVILEGES ON ALL TABLES IN SCHEMA public TO mlflow;
+        GRANT ALL PRIVILEGES ON ALL SEQUENCES IN SCHEMA public TO mlflow;
+        GRANT ALL PRIVILEGES ON ALL FUNCTIONS IN SCHEMA public TO mlflow;
+    EOSQL 

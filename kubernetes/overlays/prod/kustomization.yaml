@@ -1,0 +1,28 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+namespace: mlops-prod
+
+resources:
+- ../../base/streamlit/templates/deployment.yaml
+- ../../base/streamlit/templates/service.yaml
+- ../../base/streamlit/configs/configmap.yaml
+
+patches:
+- target:
+    kind: Deployment
+    name: streamlit
+  patch: |-
+    - op: replace
+      path: /spec/template/spec/containers/0/image
+      value: your-dockerhub-username/streamlit:latest
+    - op: replace
+      path: /spec/replicas
+      value: 2
+
+configMapGenerator:
+- name: streamlit-config
+  behavior: merge
+  literals:
+  - ENVIRONMENT=production
+  # Aquí se pueden sobrescribir las credenciales de producción de manera segura 
