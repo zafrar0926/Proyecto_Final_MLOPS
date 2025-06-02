@@ -1,0 +1,16 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: check-raw-db
+  namespace: mlops
+spec:
+  template:
+    spec:
+      containers:
+      - name: psql
+        image: postgres:13
+        command: ["/bin/sh", "-c"]
+        args:
+        - PGPASSWORD=rawdata123 psql -h raw-data-db -U rawdata -d raw_data -c "\dt" && PGPASSWORD=rawdata123 psql -h raw-data-db -U rawdata -d raw_data -c "SELECT COUNT(*) FROM raw_properties;"
+      restartPolicy: Never
+  backoffLimit: 1 

@@ -1,0 +1,39 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: airflow-init
+spec:
+  template:
+    spec:
+      initContainers:
+      - name: wait-for-db
+        image: busybox
+        command: ['sh', '-c', 'until nc -z postgresql 5432; do echo waiting for postgresql; sleep 2; done;']
+      containers:
+      - name: airflow-init
+        image: apache/airflow:2.7.1
+        command:
+        - /bin/bash
+        - -c
+        - |
+          airflow db migrate && \
+          airflow users create \
+            --username admin \
+            --firstname admin \
+            --lastname admin \
+            --role Admin \
+            --email admin@example.com \
+            --password admin
+        env:
+        - name: AIRFLOW__DATABASE__SQL_ALCHEMY_CONN
+          value: postgresql://airflow:airflow@postgresql:5432/airflow
+        - name: AIRFLOW__CORE__EXECUTOR
+          value: LocalExecutor
+        - name: AIRFLOW__WEBSERVER__SECRET_KEY
+          value: "your_secret_key_here"
+      volumes:
+      - name: requirements
+        configMap:
+          name: airflow-requirements
+      restartPolicy: OnFailure
+  backoffLimit: 1 

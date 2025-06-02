@@ -1,0 +1,19 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: airflow-requirements
+  namespace: mlops
+data:
+  requirements.txt: |
+    pandas==1.5.3
+    requests==2.31.0
+    mlflow==2.7.1
+    sqlalchemy==1.4.50
+    psycopg2-binary==2.9.9
+    shap==0.44.1
+    scikit-learn==1.2.2
+    matplotlib==3.7.1
+    scipy==1.10.1
+    numba==0.57.1
+    tqdm==4.65.0
+    slicer==0.0.7 

@@ -1,0 +1,37 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: create-raw-table
+  namespace: mlops
+spec:
+  template:
+    spec:
+      containers:
+      - name: psql
+        image: postgres:13
+        command: ["/bin/sh", "-c"]
+        args:
+        - |
+          PGPASSWORD=rawdata123 psql -h raw-data-db -U rawdata -d raw_data << 'EOF'
+          DROP TABLE IF EXISTS raw_properties;
+          CREATE TABLE raw_properties (
+              id SERIAL PRIMARY KEY,
+              brokered_by NUMERIC,
+              status VARCHAR(50),
+              price NUMERIC,
+              bed INTEGER,
+              bath INTEGER,
+              acre_lot NUMERIC,
+              street NUMERIC,
+              city VARCHAR(100),
+              state VARCHAR(50),
+              zip_code NUMERIC,
+              house_size NUMERIC,
+              prev_sold_date DATE,
+              created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+          );
+          CREATE INDEX IF NOT EXISTS idx_raw_properties_price ON raw_properties(price);
+          \dt
+          EOF
+      restartPolicy: Never
+  backoffLimit: 1 

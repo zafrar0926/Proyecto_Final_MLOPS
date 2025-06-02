@@ -17,20 +17,24 @@ logger = logging.getLogger(__name__)
 
 def get_best_run_metric(client, experiment_name, metric_name):
     """Obtiene el mejor valor de una métrica de todos los experimentos anteriores."""
-    experiment = client.get_experiment_by_name(experiment_name)
-    if experiment is None:
+    try:
+        experiment = client.get_experiment_by_name(experiment_name)
+        if experiment is None:
+            return float('-inf')
+        
+        runs = client.search_runs(
+            experiment_ids=[experiment.experiment_id],
+            order_by=[f"metrics.{metric_name} DESC"],
+            max_results=1
+        )
+        
+        if not runs:
+            return float('-inf')
+        
+        return runs[0].data.metrics.get(metric_name, float('-inf'))
+    except Exception as e:
+        logger.warning(f"Error al obtener métricas anteriores: {e}")
         return float('-inf')
-    
-    runs = client.search_runs(
-        experiment_ids=[experiment.experiment_id],
-        order_by=[f"metrics.{metric_name} DESC"],
-        max_results=1
-    )
-    
-    if not runs:
-        return float('-inf')
-    
-    return runs[0].data.metrics.get(metric_name, float('-inf'))
 
 def main(db_uri):
     """
@@ -52,11 +56,15 @@ def main(db_uri):
         client = MlflowClient()
         
         # Cargar datos
-        logger.info("Cargando datos...")
+        logger.info("Cargando datos desde la base de datos clean...")
         engine = create_engine(db_uri)
         df = pd.read_sql_table('clean_properties', engine)
         
+        if len(df) == 0:
+            raise ValueError("No hay datos en la tabla clean_properties")
+        
         # Preparar datos
+        logger.info("Preparando datos para entrenamiento...")
         X = df[['bed', 'bath', 'acre_lot', 'house_size', 'total_rooms']]
         y = df['price']
         
@@ -70,8 +78,8 @@ def main(db_uri):
         
         # Definir parámetros para GridSearch
         param_grid = {
-            'alpha': [0.00001, 0.0001, 0.001, 0.01, 0.1, 1.0, 10.0],
-            'l1_ratio': [0.0, 0.1, 0.3, 0.5, 0.7, 0.9, 1.0]
+            'alpha': [0.00001, 0.0001, 0.001, 0.01, 0.1, 1.0],
+            'l1_ratio': [0.1, 0.3, 0.5, 0.7, 0.9]
         }
         
         # Crear modelo base
@@ -103,6 +111,12 @@ def main(db_uri):
         test_mse = mean_squared_error(y_test, y_pred)
         test_mae = mean_absolute_error(y_test, y_pred)
         
+        metrics = {
+            'test_r2': test_r2,
+            'test_mse': test_mse,
+            'test_mae': test_mae
+        }
+        
         logger.info(f"Métricas del mejor modelo:")
         logger.info(f"R2 Score: {test_r2}")
         logger.info(f"MSE: {test_mse}")
@@ -116,29 +130,17 @@ def main(db_uri):
         with mlflow.start_run(run_name="grid_search_best_model"):
             # Registrar parámetros
             mlflow.log_params(best_params)
-            
-            # Registrar métricas
-            mlflow.log_metrics({
-                "test_r2": test_r2,
-                "test_mse": test_mse,
-                "test_mae": test_mae
-            })
+            mlflow.log_metrics(metrics)
             
             # Solo registrar el modelo si es mejor que el anterior
             if test_r2 > best_previous_r2:
                 logger.info("¡Nuevo mejor modelo encontrado! Registrando en MLflow...")
-                # Registrar el modelo
                 mlflow.sklearn.log_model(
                     best_model, 
                     "model",
                     registered_model_name="real_estate_elasticnet"
                 )
-                
-                # Registrar el scaler como artefacto
-                mlflow.sklearn.log_model(
-                    scaler,
-                    "scaler"
-                )
+                mlflow.sklearn.log_model(scaler, "scaler")
             else:
                 logger.info("El modelo actual no supera al mejor modelo anterior.")
         
@@ -149,4 +151,4 @@ def main(db_uri):
         raise
 
 if __name__ == "__main__":
-    main("postgresql://cleandata:cleandata123@clean_data_db:5432/clean_data") 
+    main("postgresql://cleandata:cleandata123@clean-data-db:5432/clean_data") 

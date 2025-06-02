@@ -11,6 +11,7 @@ import plotly.graph_objects as go
 from datetime import datetime
 import os
 from .config import settings
+import matplotlib.pyplot as plt
 
 # Configuración de la página
 st.set_page_config(
@@ -80,36 +81,58 @@ def make_prediction(data):
         st.error(f"Error making prediction: {str(e)}")
         return None
 
-def get_shap_explanation(features):
+def get_shap_explanation(features, model=None):
     """Get SHAP explanation for prediction"""
     try:
-        # Load the production model from MLflow
-        client = mlflow.tracking.MlflowClient()
-        experiment = client.get_experiment_by_name(settings.MLFLOW_MODEL_NAME)
-        if experiment:
-            production_runs = [run for run in client.search_runs(
-                experiment_ids=[experiment.experiment_id]
-            ) if run.data.tags.get("production") == "true"]
-            
-            if production_runs:
-                run = production_runs[0]
-                model = mlflow.sklearn.load_model(f"runs:/{run.info.run_id}/model")
+        # Load the production model from MLflow if not provided
+        if model is None:
+            client = mlflow.tracking.MlflowClient()
+            experiment = client.get_experiment_by_name(settings.MLFLOW_MODEL_NAME)
+            if experiment:
+                production_runs = [run for run in client.search_runs(
+                    experiment_ids=[experiment.experiment_id]
+                ) if run.data.tags.get("production") == "true"]
                 
-                # Create SHAP explainer
-                explainer = shap.LinearExplainer(model, pd.DataFrame([features]))
-                shap_values = explainer.shap_values(pd.DataFrame([features]))
-                
-                # Create feature importance plot
-                feature_importance = pd.DataFrame({
-                    'Feature': list(features.keys()),
-                    'Importance': np.abs(shap_values).mean(0)
-                })
-                feature_importance = feature_importance.sort_values('Importance', ascending=False)
-                
-                return feature_importance
+                if production_runs:
+                    run = production_runs[0]
+                    model = mlflow.sklearn.load_model(f"runs:/{run.info.run_id}/model")
+                else:
+                    st.error("No production model found")
+                    return None
+        
+        # Convert features to DataFrame
+        features_df = pd.DataFrame([features])
+        
+        # Create SHAP explainer based on model type
+        if hasattr(model, 'predict_proba'):
+            explainer = shap.TreeExplainer(model)
+        else:
+            explainer = shap.LinearExplainer(model, features_df)
+        
+        # Calculate SHAP values
+        shap_values = explainer.shap_values(features_df)
+        
+        # If shap_values is a list (for multi-output models), take the first element
+        if isinstance(shap_values, list):
+            shap_values = shap_values[0]
+        
+        # Create feature importance DataFrame
+        feature_importance = pd.DataFrame({
+            'Feature': list(features.keys()),
+            'Importance': np.abs(shap_values).mean(0),
+            'Value': shap_values[0]
+        })
+        feature_importance = feature_importance.sort_values('Importance', ascending=False)
+        
+        return {
+            'feature_importance': feature_importance,
+            'shap_values': shap_values,
+            'features_df': features_df,
+            'explainer': explainer
+        }
     except Exception as e:
         st.error(f"Error generating SHAP explanation: {str(e)}")
-    return None
+        return None
 
 def plot_model_performance(model_history):
     """Genera gráficos de rendimiento de modelos."""
@@ -225,12 +248,79 @@ elif page == "Model History":
 elif page == "Model Explainability":
     st.title("🔍 Model Explainability (SHAP)")
     
-    st.info("This section shows the SHAP values for the current production model, helping understand how each feature impacts the predictions.")
+    st.info("This section shows how different features impact the model's predictions using SHAP (SHapley Additive exPlanations) values.")
     
     try:
-        # Aquí implementaremos la explicabilidad SHAP
-        # Por ahora es un placeholder
-        st.write("SHAP analysis will be implemented here")
+        # Create sample data for explanation
+        sample_data = {
+            "bed": 3,
+            "bath": 2,
+            "house_size": 1500,
+            "acre_lot": 0.5,
+            "zip_code": "12345",
+            "city": "Sample City",
+            "state": "CA"
+        }
+        
+        # Get SHAP explanation
+        shap_explanation = get_shap_explanation(sample_data)
+        
+        if shap_explanation:
+            st.subheader("Feature Importance")
+            
+            # Plot feature importance
+            fig_importance = px.bar(
+                shap_explanation['feature_importance'],
+                x='Importance',
+                y='Feature',
+                orientation='h',
+                title='Global Feature Importance'
+            )
+            st.plotly_chart(fig_importance, use_container_width=True)
+            
+            # SHAP Summary Plot
+            st.subheader("SHAP Summary Plot")
+            fig_summary = plt.figure()
+            shap.summary_plot(
+                shap_explanation['shap_values'],
+                shap_explanation['features_df'],
+                show=False
+            )
+            st.pyplot(fig_summary)
+            
+            # Feature Impact Analysis
+            st.subheader("Feature Impact Analysis")
+            for idx, row in shap_explanation['feature_importance'].iterrows():
+                impact = "positive" if row['Value'] > 0 else "negative"
+                magnitude = abs(row['Value'])
+                
+                st.markdown(f"""
+                **{row['Feature']}**:
+                - Impact: {impact.title()}
+                - Magnitude: {magnitude:.4f}
+                - Current Value: {sample_data[row['Feature']]}
+                """)
+            
+            # Interactive Feature Analysis
+            st.subheader("Interactive Feature Analysis")
+            selected_feature = st.selectbox(
+                "Select a feature to analyze:",
+                shap_explanation['feature_importance']['Feature'].tolist()
+            )
+            
+            if selected_feature:
+                feature_idx = list(sample_data.keys()).index(selected_feature)
+                st.write(f"Analyzing the impact of {selected_feature}:")
+                
+                # Create dependence plot
+                fig_dependence = plt.figure()
+                shap.dependence_plot(
+                    feature_idx,
+                    shap_explanation['shap_values'],
+                    shap_explanation['features_df'],
+                    show=False
+                )
+                st.pyplot(fig_dependence)
         
     except Exception as e:
         st.error(f"Error generating SHAP analysis: {str(e)}")

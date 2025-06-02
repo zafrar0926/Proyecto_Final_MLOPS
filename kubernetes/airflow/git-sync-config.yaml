@@ -1,0 +1,10 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: git-sync-config
+data:
+  GIT_SYNC_REPO: "https://github.com/tu-usuario/tu-repo.git"  # Reemplazar con tu repo
+  GIT_SYNC_BRANCH: "main"
+  GIT_SYNC_ROOT: "/git"
+  GIT_SYNC_DEST: "repo"
+  GIT_SYNC_WAIT: "60" 

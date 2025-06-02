@@ -74,13 +74,41 @@ kubectl apply -f kubernetes/api -n mlops
 
 ## Acceso a los Servicios
 
-Los servicios están disponibles en los siguientes puertos:
+Una vez ejecutado `./deploy.sh`, los servicios deberían estar accesibles a través de `kubectl port-forward` que el script intenta iniciar automáticamente. Las URL son:
 
-- Streamlit: Puerto 8501
-- FastAPI: Puerto 8000
-- MLflow: Puerto 5000
-- Airflow: Puerto 8080
-- Grafana: Puerto 3000
+- **Airflow**: `http://localhost:8080/`
+- **MLflow**: `http://localhost:5000/`
+- **Streamlit**: `http://localhost:8501/`
+- **FastAPI Docs**: `http://localhost:8001/docs` (el puerto base para la API es `8001`)
+- **Grafana**: `http://localhost:3000/`
+
+El script `deploy.sh` intenta iniciar estos port-forwards en segundo plano. Los logs de cada port-forward se guardan en `/tmp/<nombre_servicio>_pf.log`.
+
+Si necesitas iniciar un port-forward manualmente (por ejemplo, si el script falla o si lo detienes), puedes usar los siguientes comandos en terminales separadas:
+
+```bash
+# Para Airflow
+kubectl port-forward svc/airflow-webserver -n mlops 8080:8080
+
+# Para MLflow
+kubectl port-forward svc/mlflow -n mlops 5000:5000
+
+# Para Streamlit
+kubectl port-forward svc/streamlit -n mlops 8501:8501
+
+# Para FastAPI (acceso en puerto local 8001)
+kubectl port-forward svc/fastapi -n mlops 8001:80 
+
+# Para Grafana
+kubectl port-forward svc/grafana -n mlops 3000:3000
+```
+
+Si deseas detener todos los port-forwards iniciados por el script o manualmente que sigan el patrón de `kubectl port-forward`:
+```bash
+pkill -f "kubectl port-forward"
+```
+
+Anteriormente, el proyecto intentaba usar Ingress para exponer los servicios, pero debido a problemas persistentes con `minikube tunnel`, se ha simplificado el acceso mediante port-forwarding directo por ahora.
 
 ## Estructura del Proyecto
 

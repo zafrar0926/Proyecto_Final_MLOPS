@@ -8,14 +8,45 @@ data:
     set -e
 
     psql -v ON_ERROR_STOP=1 --username "$POSTGRES_USER" --dbname "$POSTGRES_DB" <<-EOSQL
+        -- Crear bases de datos
         CREATE DATABASE raw_data;
         CREATE DATABASE clean_data;
         CREATE DATABASE airflow;
+        
+        -- Crear usuarios si no existen
+        DO \$\$
+        BEGIN
+            IF NOT EXISTS (SELECT FROM pg_catalog.pg_roles WHERE rolname = 'mlflow') THEN
+                CREATE USER mlflow WITH PASSWORD 'mlflow123';
+            END IF;
+            IF NOT EXISTS (SELECT FROM pg_catalog.pg_roles WHERE rolname = 'airflow') THEN
+                CREATE USER airflow WITH PASSWORD 'airflow';
+            END IF;
+        END
+        \$\$;
+        
+        -- Asignar permisos para mlflow
         GRANT ALL PRIVILEGES ON DATABASE raw_data TO mlflow;
         GRANT ALL PRIVILEGES ON DATABASE clean_data TO mlflow;
         GRANT ALL PRIVILEGES ON DATABASE airflow TO mlflow;
+        
+        -- Asignar permisos para airflow
+        GRANT ALL PRIVILEGES ON DATABASE airflow TO airflow;
+        
+        -- Configurar permisos en la base de datos airflow
         \c airflow
         GRANT ALL PRIVILEGES ON ALL TABLES IN SCHEMA public TO mlflow;
         GRANT ALL PRIVILEGES ON ALL SEQUENCES IN SCHEMA public TO mlflow;
         GRANT ALL PRIVILEGES ON ALL FUNCTIONS IN SCHEMA public TO mlflow;
+        GRANT ALL PRIVILEGES ON ALL TABLES IN SCHEMA public TO airflow;
+        GRANT ALL PRIVILEGES ON ALL SEQUENCES IN SCHEMA public TO airflow;
+        GRANT ALL PRIVILEGES ON ALL FUNCTIONS IN SCHEMA public TO airflow;
+        
+        -- Asegurar que los futuros objetos también tengan los permisos correctos
+        ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT ALL ON TABLES TO mlflow;
+        ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT ALL ON SEQUENCES TO mlflow;
+        ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT ALL ON FUNCTIONS TO mlflow;
+        ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT ALL ON TABLES TO airflow;
+        ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT ALL ON SEQUENCES TO airflow;
+        ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT ALL ON FUNCTIONS TO airflow;
     EOSQL 

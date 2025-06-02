@@ -1,0 +1,12 @@
+pandas
+requests
+mlflow
+sqlalchemy<2.0.0
+psycopg2-binary
+shap
+scikit-learn
+matplotlib
+scipy
+numba
+tqdm
+slicer==0.0.7 

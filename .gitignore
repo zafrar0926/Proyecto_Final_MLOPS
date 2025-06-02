@@ -1,0 +1,44 @@
+# Instrucciones del proyecto
+MLOPS_Proyecto_final_instrucciones.txt
+
+# Archivos JSON en la carpeta raw
+data/raw/*.json
+
+# Archivos binarios grandes
+minikube-linux-amd64
+
+# Otros archivos comunes a ignorar
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+env/
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+*.egg-info/
+.installed.cfg
+*.egg
+
+# Directorios de entornos virtuales
+venv/
+ENV/
+
+# Archivos de IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# Archivos de sistema
+.DS_Store
+Thumbs.db 

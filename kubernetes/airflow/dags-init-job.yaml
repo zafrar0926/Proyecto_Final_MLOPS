@@ -1,0 +1,32 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: airflow-dags-init
+  namespace: mlops
+spec:
+  template:
+    spec:
+      containers:
+      - name: dags-init
+        image: busybox
+        command:
+        - /bin/sh
+        - -c
+        - |
+          mkdir -p /airflow-dags
+          cp /configmap-dags/* /airflow-dags/
+          chmod -R 644 /airflow-dags/*
+        volumeMounts:
+        - name: dags-storage
+          mountPath: /airflow-dags
+        - name: configmap-dags
+          mountPath: /configmap-dags
+      restartPolicy: Never
+      volumes:
+      - name: dags-storage
+        persistentVolumeClaim:
+          claimName: airflow-dags-pvc
+      - name: configmap-dags
+        configMap:
+          name: airflow-dags
+  backoffLimit: 4 

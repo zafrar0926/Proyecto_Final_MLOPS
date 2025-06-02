@@ -1,0 +1,60 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: airflow-webserver
+  namespace: mlops
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: airflow-webserver
+  template:
+    metadata:
+      labels:
+        app: airflow-webserver
+    spec:
+      serviceAccount: airflow-init
+      initContainers:
+      - name: wait-for-db
+        image: busybox
+        command: ['sh', '-c', 'until nc -z postgresql 5432; do echo waiting for postgresql; sleep 2; done;']
+      - name: wait-for-init
+        image: bitnami/kubectl
+        command:
+        - sh
+        - -c
+        - |
+          until kubectl get job airflow-init -n mlops -o jsonpath='{.status.conditions[?(@.type=="Complete")].status}' | grep True; do
+            echo "waiting for airflow-init job to complete..."
+            sleep 5
+          done
+      containers:
+      - name: webserver
+        image: apache/airflow:2.7.1
+        command: ["/bin/bash"]
+        args:
+        - -c
+        - |
+          pip install --no-cache-dir -r /requirements/requirements.txt
+          airflow webserver
+        ports:
+        - containerPort: 8080
+        env:
+        - name: AIRFLOW__DATABASE__SQL_ALCHEMY_CONN
+          value: postgresql://airflow:airflow@postgresql:5432/airflow
+        - name: AIRFLOW__CORE__EXECUTOR
+          value: LocalExecutor
+        volumeMounts:
+        - name: dags
+          mountPath: /opt/airflow/dags
+        - name: requirements
+          mountPath: /requirements
+      volumes:
+      - name: dags
+        persistentVolumeClaim:
+          claimName: airflow-dags-pvc
+      - name: requirements
+        configMap:
+          name: airflow-requirements
+      - name: airflow-local
+        emptyDir: {} 

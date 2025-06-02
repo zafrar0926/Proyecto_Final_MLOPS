@@ -3,34 +3,45 @@ kind: Ingress
 metadata:
   name: mlops-ingress
   annotations:
-    nginx.ingress.kubernetes.io/rewrite-target: /
+    nginx.ingress.kubernetes.io/rewrite-target: /$2
+    nginx.ingress.kubernetes.io/proxy-body-size: "0"
+    nginx.ingress.kubernetes.io/proxy-read-timeout: "600"
+    nginx.ingress.kubernetes.io/proxy-send-timeout: "600"
 spec:
+  ingressClassName: nginx
   rules:
   - http:
       paths:
-      - path: /api
-        pathType: Prefix
+      - path: /api(/|$)(.*)
+        pathType: ImplementationSpecific
         backend:
           service:
             name: fastapi
             port:
               number: 8000
-      - path: /mlflow
-        pathType: Prefix
+      - path: /mlflow(/|$)(.*)
+        pathType: ImplementationSpecific
         backend:
           service:
             name: mlflow
             port:
               number: 5000
-      - path: /airflow
-        pathType: Prefix
+      - path: /airflow(/|$)(.*)
+        pathType: ImplementationSpecific
         backend:
           service:
             name: airflow-webserver
             port:
               number: 8080
-      - path: /
-        pathType: Prefix
+      - path: /grafana(/|$)(.*)
+        pathType: ImplementationSpecific
+        backend:
+          service:
+            name: grafana
+            port:
+              number: 3000
+      - path: /(.*)
+        pathType: ImplementationSpecific
         backend:
           service:
             name: streamlit
